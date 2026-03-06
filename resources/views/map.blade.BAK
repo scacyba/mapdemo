@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="UTF-8">
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+</head>
+
+<body>
+
+<div style="display:flex">
+
+<div id="map" style="width:70%;height:600px;"></div>
+
+<div id="info" style="width:30%">
+クリックすると情報表示
+  <canvas id="tempChart"></canvas>
+</div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+let tempChart = null;
+
+async function loadWeatherHistory(name, address, lat, lng) {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(end.getDate() - 29);
+
+  const fmt = d => d.toISOString().slice(0, 10);
+
+  const url =
+    `https://archive-api.open-meteo.com/v1/archive` +
+    `?latitude=${lat}` +
+    `&longitude=${lng}` +
+    `&start_date=${fmt(start)}` +
+    `&end_date=${fmt(end)}` +
+    `&daily=temperature_2m_max,temperature_2m_min` +
+    `&timezone=Asia%2FTokyo`;
+
+  const res = await fetch(url);
+  const data = await res.json();
+
+  document.getElementById("info").innerHTML = `
+    <h3>${name}</h3>
+    <div>${address}</div>
+    <canvas id="tempChart"></canvas>
+  `;
+
+  const ctx = document.getElementById("tempChart").getContext("2d");
+
+  if (tempChart) {
+    tempChart.destroy();
+  }
+
+  tempChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.daily.time,
+      datasets: [
+        {
+          label: '最高気温',
+          data: data.daily.temperature_2m_max
+        },
+        {
+          label: '最低気温',
+          data: data.daily.temperature_2m_min
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
+  });
+}
+
+var map = L.map('map').setView([34.6654,133.9185],10);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+}).addTo(map);
+
+@foreach($points as $p)
+
+var marker = L.marker([{{$p->lat}},{{$p->lng}}]).addTo(map);
+
+marker.on('click',function(){
+
+  loadWeatherHistory(
+    @json($p->name ?? ''),
+    @json($p->address ?? ''),
+    {{$p->lat}},
+    {{$p->lng}}
+  );
+
+});
+
+@endforeach
+
+</script>
+
+</body>
+</html>
