@@ -1,4 +1,4 @@
-FROM php:8.2-cli
+FROM php:8.4-cli
 
 WORKDIR /app
 
@@ -19,4 +19,3 @@ RUN php artisan key:generate
 RUN chmod -R 777 storage bootstrap/cache
 
 CMD php artisan serve --host=0.0.0.0 --port=$PORT
-
