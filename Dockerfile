@@ -14,6 +14,8 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 RUN composer install --no-dev --optimize-autoloader
 
+RUN cp .env.example .env
+
 RUN php artisan key:generate
 
 RUN chmod -R 777 storage bootstrap/cache
